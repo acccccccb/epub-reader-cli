@@ -1,0 +1,28 @@
+{
+  "name": "ebook-reader-cli",
+  "version": "0.0.1",
+  "description": "Reading e-book in command line",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "e-book",
+    "reader"
+  ],
+  "type": "module",
+  "author": "ihtmlcss.com",
+  "license": "MIT",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "htmlparser2": "^9.1.0",
+    "inquirer": "^12.2.0",
+    "node-pager": "^0.3.6",
+    "unzipper": "^0.12.3",
+    "xmldom": "^0.6.0"
+  },
+  "volta": {
+    "node": "18.16.0"
+  }
+}
