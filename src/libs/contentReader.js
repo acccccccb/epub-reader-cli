@@ -30,7 +30,7 @@ const contentReader = async (cfg = {
                 if (name === "body") isInBody = true; // 进入 <body> 标签
             },
             ontext(text) {
-                if (isInBody) textContent += text.replace(/\s+/g, " ").trim() + " ";
+                if (isInBody) textContent += text.replace(/\s+/g, "").trim();
             },
             onclosetag(name) {
                 if (name === "body") isInBody = false; // 退出 <body> 标签
@@ -39,7 +39,9 @@ const contentReader = async (cfg = {
         });
         const htmlStream = fs.createReadStream(`${tempPath}/${opfPath}/${chapter_src}`, { encoding: cfg.encode }).pipe(parser)
             .on("finish", () => {
-                resolve(textContent);
+                fs.writeFileSync(`${tempPath}/reader.tmp`, textContent);
+                // resolve(`${tempPath}/reader.tmp`);
+                resolve(`${textContent}`);
             });
     })
 }

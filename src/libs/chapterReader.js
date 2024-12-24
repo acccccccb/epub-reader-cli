@@ -3,11 +3,15 @@ import fs from 'fs';
 import contentReader from './contentReader.js';
 import { DOMParser } from 'xmldom';
 import inquirer from 'inquirer';
-import pager from 'node-pager';
+// import pager from 'node-pager';
+import pager from './pager.js';
 import colors from 'colors';
+import { exec } from 'child_process';
+import iconv from 'iconv-lite';
+import buffer from 'buffer';
 
 const chapterReader = (cfg={
-    filePath,
+    filePath: '',
     encode: 'utf-8',
 }) => {
     const tempPath = `${cfg.filePath}.tmp`;
@@ -81,7 +85,7 @@ const chapterReader = (cfg={
             }
             arr.push({
                 name: tab + item.title['green'],
-                value: item.src,
+                value: item.src.split('#')[0],
             })
             if(item.children) {
                 loop(item.children, level + 1);
@@ -89,7 +93,6 @@ const chapterReader = (cfg={
         })
     }
     loop(chapter);
-
     inquirer
         .prompt([
             {
@@ -100,15 +103,32 @@ const chapterReader = (cfg={
             },
         ])
         .then(({chapter_src}) => {
-            contentReader({
-                filePath: cfg.filePath,
-                encode: cfg.encode,
-                chapter_src
-            }).then(content => {
-                pager(content, '-F').then(() => {
-                    console.log('pager exited')
+            const readContent = (src) => {
+                contentReader({
+                    filePath: cfg.filePath,
+                    encode: cfg.encode,
+                    chapter_src: src,
+                }).then(content => {
+                    pager(content, (res) => {
+                        if(res) {
+                            for (let i=0;i<=arr.length;i++) {
+                                if(arr[i]?.value === src && arr[i + 1]) {
+                                    readContent(arr[i + 1].value);
+                                    break;
+                                }
+                            }
+                        } else {
+                            for (let i=0;i<=arr.length;i++) {
+                                if(arr[i]?.value === src && arr[i - 1]) {
+                                    readContent(arr[i - 1].value);
+                                    break;
+                                }
+                            }
+                        }
+                    });
                 })
-            })
+            }
+            readContent(chapter_src);
         })
         .catch((error) => {
             console.log(error.toString());
