@@ -15,6 +15,17 @@ const metaReader = async (cfg={
     const directory = await unzipper.Open.buffer(buffer);
     await directory.extract({path: tempPath});
 
+    process.on('exit', (code) => {
+        try {
+            fs.rmSync(`${tempPath}`, { recursive: true, force: true });
+        } catch (err) {
+            console.error('Error while deleting folder:', err);
+        }
+    });
+    process.on('SIGINT', () => {
+        process.exit(0); // 必须调用 `process.exit()` 结束进程
+    });
+
 // 读取container文件
     const containerXml = fs.readFileSync(`${containerPath}`, cfg.encode);
     const containerXmlNode = new DOMParser().parseFromString(containerXml, 'text/xml');

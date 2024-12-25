@@ -3,7 +3,6 @@ import fs from 'fs';
 import contentReader from './contentReader.js';
 import { DOMParser } from 'xmldom';
 import inquirer from 'inquirer';
-// import pager from 'node-pager';
 import pager from './pager.js';
 import colors from 'colors';
 import { exec } from 'child_process';
@@ -73,8 +72,6 @@ const chapterReader = (cfg={
     for(let i=0;i<navPointList.length;i++) {
         parsingNavPoint(navPointList[i], 0);
     }
-// 储存json字符串到文件
-    fs.writeFileSync(`${tempPath}/chapter.json`, JSON.stringify(chapter, null, 4));
 
     const arr = [];
     const loop = (list, level=0) => {
@@ -85,7 +82,7 @@ const chapterReader = (cfg={
             }
             arr.push({
                 name: tab + item.title['green'],
-                value: item.src.split('#')[0],
+                value: item.src,
             })
             if(item.children) {
                 loop(item.children, level + 1);
@@ -93,6 +90,33 @@ const chapterReader = (cfg={
         })
     }
     loop(chapter);
+
+    // fs.writeFileSync(`${tempPath}/chapter.json`, JSON.stringify(arr, null, 4));
+
+    const readContent = (src, jumpTo=undefined) => {
+        contentReader({
+            filePath: cfg.filePath,
+            encode: cfg.encode,
+            chapter_src: src,
+        }).then(content => {
+            const index = arr.findIndex(item => item.value === src);
+            const prev_chapter_src = arr[index-1]?.value;
+            const current_chapter_src = arr[index]?.value;
+            const next_chapter_src = arr[index+1]?.value;
+
+            pager({
+                content,
+                prev: () => {
+                    prev_chapter_src ? readContent(prev_chapter_src, 'end') : process.exit();
+                },
+                next: () => {
+                    next_chapter_src ? readContent(next_chapter_src, 'start') : process.exit();
+                },
+                jumpTo
+            });
+        })
+    }
+
     inquirer
         .prompt([
             {
@@ -103,35 +127,10 @@ const chapterReader = (cfg={
             },
         ])
         .then(({chapter_src}) => {
-            const readContent = (src) => {
-                contentReader({
-                    filePath: cfg.filePath,
-                    encode: cfg.encode,
-                    chapter_src: src,
-                }).then(content => {
-                    pager(content, (res) => {
-                        if(res) {
-                            for (let i=0;i<=arr.length;i++) {
-                                if(arr[i]?.value === src && arr[i + 1]) {
-                                    readContent(arr[i + 1].value);
-                                    break;
-                                }
-                            }
-                        } else {
-                            for (let i=0;i<=arr.length;i++) {
-                                if(arr[i]?.value === src && arr[i - 1]) {
-                                    readContent(arr[i - 1].value);
-                                    break;
-                                }
-                            }
-                        }
-                    });
-                })
-            }
-            readContent(chapter_src);
+            readContent(chapter_src, chapter_src.split('#')[1]);
         })
         .catch((error) => {
-            console.log(error.toString());
+            process.stdout.write(process.platform === 'win32' ? '\x1Bc' : '\x1B[2J\x1B[3J\x1B[H');
         });
 
     return chapter;

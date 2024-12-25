@@ -7,7 +7,12 @@ import colors from 'colors';
 
 import readline from 'readline';
 
-const pager = (content, cb) => {
+// content: string; // 定义为 string 类型
+// prev?: () => void; // 定义为函数类型，无参数，无返回值
+// next?: () => void; // 定义为函数类型，无参数，无返回值
+
+const pager = (cfg) => {
+    const { content, prev, next, jumpTo } = cfg;
     if (process.stdin.isTTY) {
         process.stdin.setRawMode(true); // 开启原始模式
         process.stdin.resume();
@@ -23,7 +28,6 @@ const pager = (content, cb) => {
     const clearScreen = () => {
         process.stdout.write(process.platform === 'win32' ? '\x1Bc' : '\x1B[2J\x1B[3J\x1B[H');
     }
-    clearScreen();
 
     const cleanText = (text) => {
         return text.replace(/[\s\x00-\x1F\x7F]/g, '')
@@ -56,6 +60,27 @@ const pager = (content, cb) => {
             line = '';
         }
     }
+    switch (jumpTo) {
+        case 'start':
+            start = 0;
+            break;
+        case 'end':
+            start = lines.length - pageSize;
+            if(start < 0) {
+                start = 0;
+            }
+            break;
+        default:
+            if(jumpTo) {
+                lines.forEach(item => {
+                    if(item.indexOf(jumpTo) > -1) {
+                        start = lines.indexOf(item) + 1;
+                    }
+                })
+            }
+            break;
+    }
+
     const total = Math.ceil(lines.length / pageSize);
 
     const getPageText = (index) => {
@@ -65,8 +90,14 @@ const pager = (content, cb) => {
                 arr.push('');
             }
         }
-        return arr.join('\r\n');
-        // return lines.slice(index, index + pageSize).join('↲\r\n');
+        return arr.map(item => {
+            const regex = /\[#.+?\/#\]/;
+            if(item.match(regex)) {
+                return colorText('(章节完)', 32);
+            } else {
+                return item;
+            }
+        }).join('\r\n');
     }
     const onKeyPress = (str, key) => {
         if (key.sequence === 'q') {
@@ -75,22 +106,24 @@ const pager = (content, cb) => {
             process.stdout.write('\x1b[?25h');
             process.exit();
         }
+        // 上一页
         if (key.sequence === '\u001b[5~') {
             clearScreen();
             start = start - pageSize;
             if(start < 0) {
                 process.stdin.off('keypress', onKeyPress);
-                cb && cb(false);
+                cfg.prev?.();
             } else {
                 reader(start);
             }
         }
+        // 下一页
         if (key.sequence === '\u001b[6~') {
             clearScreen();
             start = start + pageSize;
-            if(start >= lines.length) {
+            if(start > lines.length - 1) {
                 process.stdin.off('keypress', onKeyPress);
-                cb && cb(true);
+                cfg.next?.();
             } else {
                 reader(start);
             }
@@ -105,7 +138,8 @@ const pager = (content, cb) => {
         const pageText = getPageText(start);
         const pageInfo = colorText(` (${page}/${total}) `, '32');
         const helpText = colorText(' [上页：PageUp 下页：PageDown 退出：q] ', '33');
-        process.stdout.write(`${pageText}\r\n${helpText}${pageInfo}`);
+        process.stdout.write(`${pageText}\r\n${pageInfo}`);
+        // process.stdout.write(`${helpText}${pageInfo}`);
         // console.log(start);
         // console.log(pageSize);
         // console.log(lines.length);

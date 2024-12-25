@@ -28,5 +28,5 @@ metaReader({
         filePath,
         encode,
     });
-})
+});
 

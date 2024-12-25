@@ -9,6 +9,7 @@ const contentReader = async (cfg = {
     encode: 'utf-8',
     chapter_src: ''
 }) => {
+    process.stdout.write('加载中...');
     // 读取 HTML 文件
     const tempPath = `${cfg.filePath}.tmp`;
     const containerPath = `${cfg.filePath}.tmp/META-INF/container.xml`;
@@ -23,14 +24,22 @@ const contentReader = async (cfg = {
 
 
     const chapter_src = cfg.chapter_src.split('#')[0];
+    const chapter_id = cfg.chapter_src.split('#')[1];
 
     return new Promise((resolve, reject) => {
         const parser = new WritableStream({
-            onopentag(name) {
-                if (name === "body") isInBody = true; // 进入 <body> 标签
+            onopentag(name, attributes) {
+                if (name === "body") isInBody = true;
+            },
+            onattribute(name, value) {
+                if(name === 'id' && isInBody) {
+                    textContent += `\r\n[#${value}/#]\r\n`;
+                }
             },
             ontext(text) {
-                if (isInBody) textContent += text.replace(/\s+/g, "").trim();
+                if (isInBody) {
+                    textContent += text.replace(/\s+/g, "");
+                }
             },
             onclosetag(name) {
                 if (name === "body") isInBody = false; // 退出 <body> 标签
@@ -39,7 +48,7 @@ const contentReader = async (cfg = {
         });
         const htmlStream = fs.createReadStream(`${tempPath}/${opfPath}/${chapter_src}`, { encoding: cfg.encode }).pipe(parser)
             .on("finish", () => {
-                fs.writeFileSync(`${tempPath}/reader.tmp`, textContent);
+                // fs.writeFileSync(`${tempPath}/reader.tmp`, textContent);
                 // resolve(`${tempPath}/reader.tmp`);
                 resolve(`${textContent}`);
             });
