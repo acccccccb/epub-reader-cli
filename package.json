@@ -1,32 +1,45 @@
 {
-  "name": "ebook-reader-cli",
-  "version": "0.0.1",
-  "description": "Reading e-book in command line",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "e-book",
-    "reader"
-  ],
-  "type": "module",
-  "author": "ihtmlcss.com",
-  "license": "MIT",
-  "dependencies": {
-    "buffer": "^6.0.3",
-    "childprocess": "^2.0.2",
-    "colors": "^1.4.0",
-    "htmlparser2": "^9.1.0",
-    "iconv-lite": "^0.6.3",
-    "inquirer": "^12.2.0",
-    "string-width": "^7.2.0",
-    "terminal-size": "^4.0.0",
-    "unzipper": "^0.12.3",
-    "xmldom": "^0.6.0"
-  },
-  "volta": {
-    "node": "18.16.0"
-  }
+    "name": "ebook-reader-cli",
+    "version": "0.0.1",
+    "description": "Reading epub in command line",
+    "main": "src/index.js",
+    "bin": {
+        "erc": "./src/index.js"
+    },
+    "files": [
+        "src"
+    ],
+    "scripts": {
+        "start": "node src/index.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "e-book",
+        "reader"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/acccccccb/ebook-reader-cli.git"
+    },
+    "type": "module",
+    "author": "ihtmlcss.com",
+    "license": "MIT",
+    "dependencies": {
+        "buffer": "^6.0.3",
+        "childprocess": "^2.0.2",
+        "colors": "^1.4.0",
+        "commander": "^12.1.0",
+        "crypto": "^1.0.1",
+        "fastest-levenshtein": "^1.0.16",
+        "htmlparser2": "^9.1.0",
+        "iconv-lite": "^0.6.3",
+        "inquirer": "^12.2.0",
+        "string-width": "^7.2.0",
+        "terminal-size": "^4.0.0",
+        "unzipper": "^0.12.3",
+        "xmldom": "^0.6.0"
+    },
+    "volta": {
+        "node": "18.16.0"
+    }
 }
