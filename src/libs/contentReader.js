@@ -32,8 +32,12 @@ const contentReader = async (
 
     let isInBody = false;
     let textContent = '';
-
+    if (!cfg.chapter_src) {
+        console.log(cfg);
+        process.exit(0);
+    }
     const chapter_src = cfg.chapter_src.split('#')[0];
+
     const chapter_id = cfg.chapter_src.split('#')[1];
 
     return new Promise((resolve, reject) => {
@@ -65,7 +69,31 @@ const contentReader = async (
             .on('finish', () => {
                 // fs.writeFileSync(`${tempPath}/reader.tmp`, textContent);
                 // resolve(`${tempPath}/reader.tmp`);
-                resolve(`${textContent}`);
+                if (!chapter_id) {
+                    resolve(`${textContent}`);
+                } else {
+                    const startIndex = textContent.indexOf(
+                        `[#${chapter_id}/#]`
+                    );
+                    // 提取id之后的字符串
+                    if (startIndex !== -1) {
+                        let result = textContent.substring(startIndex);
+                        // 从下一个id截断
+                        const regex = /\[#([\w_]+)\/#\]/g;
+                        const start = 0;
+                        let end = -1;
+                        for (const match of result.matchAll(regex)) {
+                            end = match.index;
+                            if (end !== start && end !== 0) {
+                                break;
+                            }
+                        }
+                        result = result.substring(0, end || undefined);
+                        resolve(`${result}`);
+                    } else {
+                        resolve(`${textContent}`);
+                    }
+                }
             });
     });
 };

@@ -4,7 +4,7 @@
 
 ## 使用方法
 
-### 安装
+### 安装/调试
 
 ```bash
 npm i -g https://github.com/acccccccb/ebook-reader-cli.git

@@ -3,22 +3,20 @@ import path from 'path';
 
 export const writeRecord = (cfg) => {
     const { tempPath, hash, chapterSrc, pageText } = cfg;
+    const newRecord = {
+        hash,
+        pageText: pageText
+            .replace(/\x1b\[[0-9;]*m/g, '')
+            .replace(/[\x00-\x1F\x7F]/g, '')
+            .replace(/\s+/g, '')
+            .trim(),
+        lastPage: chapterSrc,
+        lastReadTime: new Date().getTime(),
+    };
+    global.newRecord = newRecord;
     fs.writeFileSync(
         path.join(path.resolve(tempPath, '../'), `${hash}.reading`),
-        JSON.stringify(
-            {
-                hash,
-                pageText: pageText
-                    .replace(/\x1b\[[0-9;]*m/g, '')
-                    .replace(/[\x00-\x1F\x7F]/g, '')
-                    .replace(/\s+/g, '')
-                    .trim(),
-                lastPage: chapterSrc,
-                lastReadTime: new Date().getTime(),
-            },
-            null,
-            4
-        )
+        JSON.stringify(newRecord, null, 4)
     );
 };
 export const readRecord = (tempPath, hash) => {

@@ -72,6 +72,10 @@ const chapterReader = async (
                 }
                 if (node.tagName === 'content') {
                     obj.src = node?.getAttribute('src');
+                    if (!obj.src) {
+                        console.log(obj);
+                        process.exit(0);
+                    }
                     if (pid === 0) {
                         chapter.push(obj);
                     } else {
@@ -140,7 +144,10 @@ const chapterReader = async (
                 },
                 next: () => {
                     if (next_chapter_src) {
-                        readContent(prev_chapter_src, 'end');
+                        readContent(
+                            next_chapter_src,
+                            next_chapter_src.split('#')[1]
+                        );
                     } else {
                         console.log('is end');
                         process.exit();
@@ -164,7 +171,7 @@ const chapterReader = async (
                 },
             ])
             .then(({ chapter_src }) => {
-                readContent(chapter_src, chapter_src.split('#')[1], 2);
+                readContent(chapter_src, chapter_src.split('#')[1], 1);
             })
             .catch((error) => {
                 process.stdout.write(

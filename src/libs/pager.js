@@ -87,20 +87,10 @@ const pager = (cfg) => {
         default:
             if (jumpTo) {
                 if (jumpType === 1) {
-                    for (let index = 0; index < lines.length; index++) {
-                        const item = lines[index];
-                        if (item.includes(jumpTo)) {
-                            start = index + 1;
-                            break;
-                        }
-                    }
+                    start = 0;
                 } else {
                     const maxMatch = closest(jumpTo, lines);
                     start = lines.indexOf(maxMatch) || 0;
-                }
-                if (start === 0) {
-                    console.log('not match');
-                    process.exit(0);
                 }
             }
             break;
@@ -119,7 +109,7 @@ const pager = (cfg) => {
             .map((item) => {
                 const regex = /\[#.+?\/#\]/;
                 if (item.match(regex)) {
-                    return colorText('-', 32);
+                    return colorText('', 32);
                 } else {
                     return item;
                 }
@@ -185,7 +175,8 @@ const pager = (cfg) => {
             chapterSrc: cfg.chapterSrc,
             pageText: pageText,
         });
-        process.stdout.write(`${pageText}\r\n${pageInfo} ${precent}`);
+        process.stdout.write(`${pageText}\r\n${pageInfo}`);
+        // process.stdout.write(`${pageText}\r\n${pageInfo} ${precent}`);
         // process.stdout.write(`${helpText}${pageInfo}`);
         // console.log(start);
         // console.log(pageSize);

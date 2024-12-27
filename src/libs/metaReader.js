@@ -63,6 +63,7 @@ const metaReader = async (
             }
         }
     }
+    global.meta = meta;
     return meta;
 };
 export default metaReader;
