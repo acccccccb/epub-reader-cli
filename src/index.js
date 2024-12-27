@@ -30,9 +30,13 @@ try {
 
 program.name(programName);
 program.version(version);
-program.description(
-    `${programName} (${version}) ${description}\r\n[${author}]`.blue
+program.description(`${description}`.blue);
+
+console.log(
+    `【${program.name()} - ${program.description()}】 ${program.version()} <${author}>`
+        .gray
 );
+
 program.usage('erc <epub_file_path>');
 program.helpOption('-h, --help', 'read more information');
 program.showHelpAfterError('错误');
