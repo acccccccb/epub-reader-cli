@@ -1,7 +1,7 @@
 {
     "name": "ebook-reader-cli",
     "version": "0.0.1",
-    "description": "Reading epub in command line",
+    "description": "在命令行中读取epub文件",
     "main": "src/index.js",
     "bin": {
         "erc": "./src/index.js"
