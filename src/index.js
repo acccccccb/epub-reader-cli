@@ -52,11 +52,9 @@ const openBook = async (filePath) => {
 
     metaReader({
         hash,
-        encode,
     }).then((meta) => {
         chapterReader({
             hash,
-            encode,
         });
     });
 };

@@ -2,6 +2,7 @@ import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
 import fs from 'fs';
+import 'colors';
 
 export const getTempPath = (hash, suffix) => {
     if (hash) {
@@ -33,8 +34,9 @@ export const clearScreen = () => {
 };
 
 export const cleanText = (text) => {
-    return text.replace(/[\s\x00-\x1F\x7F]/g, '');
+    return text.replace(/[\s?\x00-\x1F\x7F]/g, '');
 };
 
-export const colorText = (text, colorCode) =>
-    `\x1b[${colorCode}m${text}\x1b[0m`;
+export const colorText = (text, colorCode) => {
+    return `\x1b[${colorCode}m${cleanText(text)}\x1b[0m`;
+};

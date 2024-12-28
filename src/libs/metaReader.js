@@ -2,11 +2,11 @@ import fs from 'fs';
 import { DOMParser } from 'xmldom';
 import { getTempPath } from './tools.js';
 
+const encode = 'utf-8';
 // 元数据解析器
 const metaReader = async (
     cfg = {
         hash: null,
-        encode: 'utf-8',
     }
 ) => {
     if (!cfg.hash) {
@@ -18,7 +18,7 @@ const metaReader = async (
     const meta = {};
 
     // 读取container文件
-    const containerXml = fs.readFileSync(`${containerPath}`, cfg.encode);
+    const containerXml = fs.readFileSync(`${containerPath}`, encode);
     const containerXmlNode = new DOMParser().parseFromString(
         containerXml,
         'text/xml'
@@ -28,7 +28,7 @@ const metaReader = async (
         .getElementsByTagName('rootfile')[0]
         ?.getAttribute('full-path');
 
-    const contentOpf = fs.readFileSync(`${tempPath}/${opfPath}`, cfg.encode);
+    const contentOpf = fs.readFileSync(`${tempPath}/${opfPath}`, encode);
     // 解析opf文件
     const contentOpfXml = new DOMParser().parseFromString(
         contentOpf,

@@ -6,12 +6,15 @@ import pager from './pager.js';
 import { clearRecord, readRecord } from './record.js';
 import { clearScreen, getTempPath } from './tools.js';
 
+const encode = 'utf-8';
+
 const chapterReader = async (
     cfg = {
         hash: '',
-        encode: 'utf-8',
+        jumpOver,
     }
 ) => {
+    const { jumpOver } = cfg;
     if (!cfg.hash) {
         console.error('hash can not empty');
         process.exit(0);
@@ -20,7 +23,7 @@ const chapterReader = async (
     const tempPath = getTempPath(cfg.hash);
     const containerPath = `${tempPath}/META-INF/container.xml`;
     // 读取container文件
-    const containerXml = fs.readFileSync(`${containerPath}`, cfg.encode);
+    const containerXml = fs.readFileSync(`${containerPath}`, encode);
     const containerXmlNode = new DOMParser().parseFromString(
         containerXml,
         'text/xml'
@@ -30,10 +33,7 @@ const chapterReader = async (
         .getElementsByTagName('rootfile')[0]
         ?.getAttribute('full-path')
         ?.replace('content.opf', '');
-    const tocNcx = fs.readFileSync(
-        `${tempPath}/${opfPath}/toc.ncx`,
-        cfg.encode
-    );
+    const tocNcx = fs.readFileSync(`${tempPath}/${opfPath}/toc.ncx`, encode);
 
     const nodeFilter = (nodeList, nodeType = 1) => {
         const list = [];
@@ -106,7 +106,7 @@ const chapterReader = async (
             }
             arr.push({
                 id: item.id,
-                name: tab + item.title['green'],
+                name: tab + item.title,
                 value: item.id,
                 src: item.src,
             });
@@ -140,7 +140,7 @@ const chapterReader = async (
             const next_chapter_id = arr[index + 1]?.id;
             contentReader({
                 hash: cfg.hash,
-                encode: cfg.encode,
+                encode: encode,
                 chapter_src: arr[index].src,
             }).then((content) => {
                 pager({
@@ -197,7 +197,7 @@ const chapterReader = async (
                 process.exit(0);
             });
     };
-    if (!record) {
+    if (!record || jumpOver) {
         startNewReading();
     } else {
         inquirer

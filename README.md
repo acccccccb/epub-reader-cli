@@ -18,7 +18,12 @@ npm link
 erc <epub_file_path>
 ```
 
-### 快捷键
+### 阅读快捷键
 
 -   翻页：`PageUp`/`PageDown` `z`/`x`
+-   上一章/下一章：`,`/`.`
+-   返回目录：`b`
+-   回到章节开始：`home`
+-   回到章节末尾：`end`
+-   关闭书籍并删除阅读记录：`delete`
 -   退出：`q` / `ctrl+c`

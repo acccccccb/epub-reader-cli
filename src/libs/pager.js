@@ -1,9 +1,11 @@
 import stringWidth from 'string-width';
 import terminalSize from 'terminal-size';
 import { closest } from 'fastest-levenshtein';
-import { writeRecord } from './record.js';
+import { writeRecord, clearCacheByHash } from './record.js';
 import { clearScreen, cleanText, colorText } from './tools.js';
+import chapterReader from './chapterReader.js';
 import readline from 'readline';
+import inquirer from 'inquirer';
 
 // content: string; // 定义为 string 类型
 // prev?: () => void; // 定义为函数类型，无参数，无返回值
@@ -91,15 +93,73 @@ const pager = (cfg) => {
             })
             .join('\r\n');
     };
-    const onKeyPress = (str, key) => {
-        if (key.sequence === 'q') {
+    const onKeyPress = async (str, key) => {
+        // 返回目录
+        if (key.name === 'b') {
+            clearScreen();
+            process.stdin.off('keypress', onKeyPress);
+            await chapterReader({
+                hash,
+                jumpOver: true,
+            });
+        }
+        // 下一章
+        if (key.sequence === ',') {
+            clearScreen();
+            process.stdin.off('keypress', onKeyPress);
+            prev?.();
+        }
+        // 下一章
+        if (key.sequence === '.') {
+            clearScreen();
+            process.stdin.off('keypress', onKeyPress);
+            next?.();
+        }
+        // 回到章节开始
+        if (key.name === 'home') {
+            clearScreen();
+            start = 0;
+            reader(start);
+        }
+        // 回到章节末尾
+        if (key.name === 'end') {
+            clearScreen();
+            start = lines.length - pageSize;
+            reader(start);
+        }
+        // 退出
+        if (key.name === 'q' || (key.ctrl && key.name === 'c')) {
             clearScreen();
             process.stdin.off('keypress', onKeyPress);
             process.stdout.write('\x1b[?25h');
             process.exit(0);
         }
+        // 关闭书籍并删除阅读记录
+        if (key.name === 'delete') {
+            clearScreen();
+            inquirer
+                .prompt([
+                    {
+                        name: 'confirm',
+                        message: `是否关闭并删除此书的阅读记录和缓存？`.red,
+                        type: 'confirm',
+                    },
+                ])
+                .then(async ({ confirm }) => {
+                    if (confirm) {
+                        await clearCacheByHash(hash);
+                        console.log('清除成功'.green);
+                    }
+                    process.exit(0);
+                })
+                .catch(() => {
+                    clearScreen();
+                    console.log('取消操作');
+                    process.exit(0);
+                });
+        }
         // 上一页
-        if (key.sequence === '\u001b[5~' || key.sequence === 'z') {
+        if (key.name === 'pageup' || key.name === 'z') {
             clearScreen();
             if (start === 0) {
                 process.stdin.off('keypress', onKeyPress);
@@ -113,7 +173,7 @@ const pager = (cfg) => {
             }
         }
         // 下一页
-        if (key.sequence === '\u001b[6~' || key.sequence === 'x') {
+        if (key.name === 'pagedown' || key.name === 'x') {
             clearScreen();
             if (start + pageSize <= lines.length - 1) {
                 start = start + pageSize;
@@ -136,12 +196,12 @@ const pager = (cfg) => {
         const total_capter = global.current_capter?.total;
         const pageInfo = colorText(
             `${current_capter_name} (${page}/${total}) `,
-            '32'
+            '90'
         );
-        const helpText = colorText(
-            ' [上页：PageUp 下页：PageDown 退出：q] ',
-            '33'
-        );
+        // const helpText = colorText(
+        //     ' [上页：PageUp 下页：PageDown 退出：q] ',
+        //     '33'
+        // );
         // let present = Number(((start + pageSize) / lines.length) * 100).toFixed(
         //     1
         // );

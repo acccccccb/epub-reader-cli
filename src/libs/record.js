@@ -76,3 +76,20 @@ export const clearRecord = (hash) => {
         }
     });
 };
+
+export const clearCacheByHash = (hash) => {
+    return new Promise((resolve) => {
+        if (hash) {
+            const filePath = path.join(tempPath, `${hash}.reading`);
+            const bookPath = path.join(tempPath, `${hash}`);
+            // 删除文件
+            if (fs.existsSync(filePath)) {
+                fs.rmSync(filePath, { recursive: true, force: true });
+            }
+            if (fs.existsSync(bookPath)) {
+                fs.rmSync(bookPath, { recursive: true, force: true });
+            }
+        }
+        resolve();
+    });
+};
