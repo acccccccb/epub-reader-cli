@@ -1,12 +1,8 @@
-import { exec, spawn } from 'child_process';
-import iconv from 'iconv-lite';
-import buffer from 'buffer';
 import stringWidth from 'string-width';
 import terminalSize from 'terminal-size';
-import { distance, closest } from 'fastest-levenshtein';
-import colors from 'colors';
+import { closest } from 'fastest-levenshtein';
 import { writeRecord } from './record.js';
-
+import { clearScreen, cleanText, colorText } from './tools.js';
 import readline from 'readline';
 
 // content: string; // 定义为 string 类型
@@ -14,17 +10,8 @@ import readline from 'readline';
 // next?: () => void; // 定义为函数类型，无参数，无返回值
 
 const pager = (cfg) => {
-    const {
-        content,
-        prev,
-        next,
-        jumpTo,
-        tempPath,
-        hash,
-        chapterSrc,
-        jumpType,
-    } = cfg;
-
+    const { content, prev, next, jumpTo, hash, chapterSrc, jumpType } = cfg;
+    // process.exit(0);
     if (process.stdin.isTTY) {
         process.stdin.setRawMode(true); // 开启原始模式
         process.stdin.resume();
@@ -36,18 +23,6 @@ const pager = (cfg) => {
         encoding: binaryEncoding,
         windowsHide: false,
     };
-
-    const clearScreen = () => {
-        process.stdout.write(
-            process.platform === 'win32' ? '\x1Bc' : '\x1B[2J\x1B[3J\x1B[H'
-        );
-    };
-
-    const cleanText = (text) => {
-        return text.replace(/[\s\x00-\x1F\x7F]/g, '');
-    };
-
-    const colorText = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
 
     let start = 0;
     const { columns, rows } = terminalSize();
@@ -107,7 +82,7 @@ const pager = (cfg) => {
         }
         return arr
             .map((item) => {
-                const regex = /\[#.+?\/#\]/;
+                const regex = /\[#.+?\/#]/;
                 if (item.match(regex)) {
                     return colorText('', 32);
                 } else {
@@ -121,7 +96,7 @@ const pager = (cfg) => {
             clearScreen();
             process.stdin.off('keypress', onKeyPress);
             process.stdout.write('\x1b[?25h');
-            process.exit();
+            process.exit(0);
         }
         // 上一页
         if (key.sequence === '\u001b[5~' || key.sequence === 'z') {
@@ -156,27 +131,32 @@ const pager = (cfg) => {
         clearScreen();
         const page = Math.ceil(start / pageSize) + 1;
         const pageText = getPageText(start);
-        const pageInfo = colorText(` (${page}/${total}) `, '32');
+        // const current_index = global.current_capter?.index;
+        const current_capter_name = global.current_capter?.name;
+        const total_capter = global.current_capter?.total;
+        const pageInfo = colorText(
+            `${current_capter_name} (${page}/${total}) `,
+            '32'
+        );
         const helpText = colorText(
             ' [上页：PageUp 下页：PageDown 退出：q] ',
             '33'
         );
-        let precent = Number(((start + pageSize) / lines.length) * 100).toFixed(
-            1
-        );
-        if (precent > 100) {
-            precent = 100;
-        }
-        precent += '%';
+        // let present = Number(((start + pageSize) / lines.length) * 100).toFixed(
+        //     1
+        // );
+        // if (present > 100) {
+        //     present = 100;
+        // }
+        // present += '%';
 
         writeRecord({
             hash: cfg.hash,
-            tempPath: cfg.tempPath,
             chapterSrc: cfg.chapterSrc,
             pageText: pageText,
         });
-        process.stdout.write(`${pageText}\r\n${pageInfo}`);
-        // process.stdout.write(`${pageText}\r\n${pageInfo} ${precent}`);
+        process.stdout.write(`${pageInfo}\r\n${pageText}`);
+        // process.stdout.write(`${pageText}\r\n${pageInfo} ${present}`);
         // process.stdout.write(`${helpText}${pageInfo}`);
         // console.log(start);
         // console.log(pageSize);

@@ -1,18 +1,19 @@
-import unzipper from 'unzipper';
 import fs from 'fs';
 import { DOMParser } from 'xmldom';
-import path from 'path';
-import os from 'os';
+import { getTempPath } from './tools.js';
 
 // 元数据解析器
 const metaReader = async (
     cfg = {
-        tempPath: null,
+        hash: null,
         encode: 'utf-8',
     }
 ) => {
-    if (!cfg.tempPath) process.exit(0);
-    const tempPath = cfg.tempPath;
+    if (!cfg.hash) {
+        console.log('hash can not empty');
+        process.exit(0);
+    }
+    const tempPath = getTempPath(cfg.hash);
     const containerPath = `${tempPath}/META-INF/container.xml`;
     const meta = {};
 

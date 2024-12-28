@@ -15,7 +15,8 @@
     },
     "keywords": [
         "e-book",
-        "reader"
+        "reader",
+        "epub"
     ],
     "repository": {
         "type": "git",
@@ -24,6 +25,10 @@
     "type": "module",
     "author": "ihtmlcss.com",
     "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/acccccccb/ebook-reader-cli/issues"
+    },
+    "homepage": "https://github.com/acccccccb/ebook-reader-cli",
     "dependencies": {
         "buffer": "^6.0.3",
         "childprocess": "^2.0.2",

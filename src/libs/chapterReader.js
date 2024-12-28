@@ -1,27 +1,23 @@
-import unzipper from 'unzipper';
-import os from 'os';
 import fs from 'fs';
-import path from 'path';
 import contentReader from './contentReader.js';
 import { DOMParser } from 'xmldom';
 import inquirer from 'inquirer';
 import pager from './pager.js';
-import colors from 'colors';
-import { exec } from 'child_process';
-import iconv from 'iconv-lite';
-import buffer from 'buffer';
 import { clearRecord, readRecord } from './record.js';
+import { clearScreen, getTempPath } from './tools.js';
 
 const chapterReader = async (
     cfg = {
         hash: '',
-        tempPath: '',
         encode: 'utf-8',
     }
 ) => {
-    const { hash, tempPath, encode } = cfg;
-
-    if (!tempPath) process.exit(0);
+    if (!cfg.hash) {
+        console.error('hash can not empty');
+        process.exit(0);
+    }
+    const { hash } = cfg;
+    const tempPath = getTempPath(cfg.hash);
     const containerPath = `${tempPath}/META-INF/container.xml`;
     // 读取container文件
     const containerXml = fs.readFileSync(`${containerPath}`, cfg.encode);
@@ -64,11 +60,13 @@ const chapterReader = async (
             const node = stuck.shift();
             if (node.nodeType === 1) {
                 if (node.tagName === 'navLabel') {
-                    const text = nodeFilter(
-                        node.childNodes[1].childNodes,
-                        3
-                    )[0];
+                    const text = nodeFilter(node.childNodes, 1)[0].firstChild;
+
                     obj.title = text?.data;
+                    if (!obj.title) {
+                        console.log(obj);
+                        process.exit(0);
+                    }
                 }
                 if (node.tagName === 'content') {
                     obj.src = node?.getAttribute('src');
@@ -107,8 +105,10 @@ const chapterReader = async (
                 tab += '  ';
             }
             arr.push({
+                id: item.id,
                 name: tab + item.title['green'],
-                value: item.src,
+                value: item.id,
+                src: item.src,
             });
             if (item.children) {
                 loop(item.children, level + 1);
@@ -119,66 +119,82 @@ const chapterReader = async (
 
     // fs.writeFileSync(`${tempPath}/chapter.json`, JSON.stringify(arr, null, 4));
 
-    const readContent = (src, jumpTo = undefined, jumpType = 1) => {
-        contentReader({
-            tempPath: cfg.tempPath,
-            encode: cfg.encode,
-            chapter_src: src,
-        }).then((content) => {
-            const index = arr.findIndex((item) => item.value === src) || 0;
-            const prev_chapter_src = arr[index - 1]?.value;
-            const current_chapter_src = arr[index]?.value;
-            const next_chapter_src = arr[index + 1]?.value;
-            pager({
-                tempPath,
+    const readContent = (chapter_id, jumpTo = undefined, jumpType = 1) => {
+        if (!chapter_id) {
+            console.log(`缺少chapter_id ${chapter_id}`);
+            process.exit(0);
+        }
+        const index = arr.findIndex((item) => item.id === chapter_id) || 0;
+        global.current_capter = {
+            index,
+            total: arr.length,
+            ...arr.find((item) => item.id === chapter_id),
+        };
+        if (index >= 0) {
+            if (!arr[index]) {
+                console.log('章节不存在', chapter_id);
+                process.exit(0);
+            }
+            const prev_chapter_id = arr[index - 1]?.id;
+            const current_chapter_id = arr[index]?.id;
+            const next_chapter_id = arr[index + 1]?.id;
+            contentReader({
                 hash: cfg.hash,
-                chapterSrc: src,
-                content,
-                prev: () => {
-                    if (prev_chapter_src) {
-                        readContent(prev_chapter_src, 'end');
-                    } else {
-                        console.log('is start');
-                        process.exit();
-                    }
-                },
-                next: () => {
-                    if (next_chapter_src) {
-                        readContent(
-                            next_chapter_src,
-                            next_chapter_src.split('#')[1]
-                        );
-                    } else {
-                        console.log('is end');
-                        process.exit();
-                    }
-                },
-                jumpTo,
-                jumpType,
+                encode: cfg.encode,
+                chapter_src: arr[index].src,
+            }).then((content) => {
+                pager({
+                    hash: cfg.hash,
+                    chapterSrc: arr[index].src,
+                    content,
+                    prev: () => {
+                        if (prev_chapter_id) {
+                            readContent(prev_chapter_id, 'end');
+                        } else {
+                            readContent(current_chapter_id, 'start');
+                        }
+                    },
+                    next: () => {
+                        if (next_chapter_id) {
+                            const next_chapter_src = arr[index + 1]?.src;
+                            readContent(
+                                next_chapter_id,
+                                next_chapter_src.split('#')[1]
+                            );
+                        } else {
+                            readContent(current_chapter_id, 'end');
+                        }
+                    },
+                    jumpTo,
+                    jumpType,
+                });
             });
-        });
+        } else {
+            console.log('章节不存在', chapter_id, index);
+            process.exit(0);
+        }
     };
-    const record = await readRecord(tempPath, hash);
+    const record = await readRecord(hash);
 
     const startNewReading = () => {
         inquirer
             .prompt([
                 {
-                    name: 'chapter_src',
+                    name: 'chapter_id',
                     message: '选择章节'.blue,
                     type: 'list',
                     choices: arr,
                 },
             ])
-            .then(({ chapter_src }) => {
-                readContent(chapter_src, chapter_src.split('#')[1], 1);
+            .then(({ chapter_id }) => {
+                const chapter_src = arr.find(
+                    (item) => item.id === chapter_id
+                )?.src;
+                readContent(chapter_id, chapter_src.split('#')[1], 1);
             })
-            .catch((error) => {
-                process.stdout.write(
-                    process.platform === 'win32'
-                        ? '\x1Bc'
-                        : '\x1B[2J\x1B[3J\x1B[H'
-                );
+            .catch((err) => {
+                clearScreen();
+                process.exit(0);
             });
     };
     if (!record) {
@@ -194,14 +210,14 @@ const chapterReader = async (
             ])
             .then(async ({ confirm }) => {
                 if (confirm) {
-                    readContent(record.lastPage, record.pageText, 2);
+                    readContent(record.lastPageId, record.pageText, 2);
                 } else {
-                    await clearRecord(tempPath, hash);
+                    await clearRecord(hash);
                     startNewReading();
                 }
             })
             .catch((error) => {
-                console.log(error.toString());
+                process.exit(0);
             });
     }
 };
