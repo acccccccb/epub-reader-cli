@@ -195,7 +195,7 @@ const pager = (cfg) => {
         const current_capter_name = global.current_capter?.name;
         const total_capter = global.current_capter?.total;
         const pageInfo = colorText(
-            `${current_capter_name} (${page}/${total}) `,
+            `${current_capter_name} (${page}/${total})`,
             '90'
         );
         // const helpText = colorText(

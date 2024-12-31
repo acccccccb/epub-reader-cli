@@ -12,10 +12,22 @@ cd ebook-reader-cli
 npm link
 ```
 
+### 列出 当前目录下的 epub 文件
+
+```bash
+erc
+```
+
 ### 打开 epub 文件
 
 ```bash
 erc <epub_file_path>
+```
+
+### 清除所有阅读进度和缓存
+
+```bash
+erc clear-cache
 ```
 
 ### 阅读快捷键

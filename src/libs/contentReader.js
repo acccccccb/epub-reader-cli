@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { WritableStream } from 'htmlparser2/lib/WritableStream';
 import { DOMParser } from 'xmldom';
-import { getTempPath } from './tools.js';
+import { cleanText, getTempPath } from './tools.js';
 
 const encode = 'utf-8';
 const contentReader = async (
@@ -44,7 +44,7 @@ const contentReader = async (
 
     return new Promise((resolve) => {
         const parser = new WritableStream({
-            onopentag(name, attributes) {
+            async onopentag(name, attributes) {
                 if (name === 'body') isInBody = true;
                 if (name === 'img' && isInBody) {
                     textContent += `\r\n图片(${attributes.src})`;
@@ -52,7 +52,14 @@ const contentReader = async (
             },
             onattribute(name, value) {
                 if (name === 'id' && isInBody) {
-                    textContent += `\r\n[#${value}/#]\r\n`;
+                    // 判断id是否出现在目录中
+
+                    const finder = global.chapter.find((item) =>
+                        item.src.includes(value)
+                    );
+                    if (finder) {
+                        textContent += `\r\n[#${value}/#]\r\n`;
+                    }
                 }
             },
             ontext(text) {
@@ -72,10 +79,20 @@ const contentReader = async (
         })
             .pipe(parser)
             .on('finish', () => {
-                // fs.writeFileSync(`${tempPath}/reader.tmp`, textContent);
+                fs.writeFileSync(
+                    `${tempPath}/reader.tmp`,
+                    textContent.trimStart()
+                );
                 // resolve(`${tempPath}/reader.tmp`);
                 if (!chapter_id) {
-                    resolve(`${textContent}`);
+                    const regex = /\[#([\w_]+)\/#\]/; // 匹配 [#.../#] 模式，其中 ... 是动态内容
+                    const match = textContent.trimStart().match(regex);
+                    if (match) {
+                        const text = textContent.substring(0, match.index);
+                        resolve(`${textContent.substring(0, match.index)}`);
+                    } else {
+                        resolve(textContent);
+                    }
                 } else {
                     const startIndex = textContent.indexOf(
                         `[#${chapter_id}/#]`
@@ -85,7 +102,7 @@ const contentReader = async (
                         let result = textContent.substring(startIndex);
 
                         // 从下一个id截断
-                        const regex = /\[#([\w_]+)\/#]/g;
+                        const regex = /\[#([\w_]+)\/#\]/g;
                         const start = 0;
                         let end = -1;
                         for (const match of result.matchAll(regex)) {

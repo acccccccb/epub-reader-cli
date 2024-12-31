@@ -175,7 +175,10 @@ const chapterReader = async (
         }
     };
     const record = await readRecord(hash);
+    // 将arr写入文件
+    // fs.writeFileSync(`${tempPath}/chapter.json`, JSON.stringify(arr, null, 4));
 
+    global.chapter = arr;
     const startNewReading = () => {
         inquirer
             .prompt([
@@ -184,6 +187,7 @@ const chapterReader = async (
                     message: '选择章节'.blue,
                     type: 'list',
                     choices: arr,
+                    loop: false,
                 },
             ])
             .then(({ chapter_id }) => {

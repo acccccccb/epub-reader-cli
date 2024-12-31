@@ -12,10 +12,11 @@ export const unzipEpub = async (filePath) => {
     return new Promise(async (resolve) => {
         if (fs.existsSync(tempPath)) {
             resolve();
+        } else {
+            const buffer = fs.readFileSync(filePath);
+            const directory = await unzipper.Open.buffer(buffer);
+            await directory.extract({ path: tempPath });
+            resolve();
         }
-        const buffer = fs.readFileSync(filePath);
-        const directory = await unzipper.Open.buffer(buffer);
-        await directory.extract({ path: tempPath });
-        resolve();
     });
 };

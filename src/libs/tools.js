@@ -17,7 +17,6 @@ export const getHash = (filePath) => {
     return new Promise((resolve) => {
         const hash = crypto.createHash('sha256');
         const stream = fs.createReadStream(filePath);
-
         stream.on('data', (chunk) => {
             hash.update(chunk);
         });

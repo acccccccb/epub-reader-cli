@@ -27,7 +27,7 @@ const metaReader = async (
     const opfPath = containerXmlNode
         .getElementsByTagName('rootfile')[0]
         ?.getAttribute('full-path');
-
+    global.opfPath = opfPath;
     const contentOpf = fs.readFileSync(`${tempPath}/${opfPath}`, encode);
     // 解析opf文件
     const contentOpfXml = new DOMParser().parseFromString(

@@ -83,14 +83,37 @@ program
                 process.exit(0);
             });
     });
+
+const getBookListInfo = async (list) => {
+    return new Promise((resolve) => {
+        const promises = list.map(async (item) => {
+            const hash = await getHash(item);
+            await unzipEpub(item);
+            const meta = await metaReader({
+                hash,
+            });
+            return {
+                name:
+                    (meta?.title.length > 16
+                        ? meta?.title.substring(0, 16) + '...'
+                        : meta?.title) + `[${meta?.creator || '-'}]${hash}`,
+                value: item,
+            };
+        });
+        Promise.all(promises).then(resolve); // 等待所有异步操作完成后再 resolve
+    });
+};
+
 program.argument('[filePath]', 'epub文件路径').action(async (filePath) => {
     if (!filePath) {
-        const bookList = getBookList();
+        let bookList = getBookList(1);
         if (bookList.length === 0) {
             clearScreen();
             console.log('没有找到epub文件'.red);
             process.exit(0);
         }
+        bookList = getBookListInfo(bookList);
+
         inquirer
             .prompt([
                 {
@@ -98,6 +121,7 @@ program.argument('[filePath]', 'epub文件路径').action(async (filePath) => {
                     message: '选择文件'.blue,
                     type: 'list',
                     choices: bookList,
+                    loop: false,
                 },
             ])
             .then(({ filePath }) => {
