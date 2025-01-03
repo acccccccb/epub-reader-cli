@@ -4,7 +4,13 @@
 
 ## 使用方法
 
-### 安装/调试
+### 安装
+
+```bash
+npm i epub-reader-cli
+```
+
+### 调试
 
 ```bash
 npm i -g https://github.com/acccccccb/epub-reader-cli.git
