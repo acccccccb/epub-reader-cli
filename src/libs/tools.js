@@ -7,12 +7,12 @@ import { DOMParser } from 'xmldom';
 
 export const getTempPath = (hash, suffix) => {
     if (hash) {
-        return path.join(os.tmpdir(), '.ebook-reader-cli', hash);
+        return path.join(os.tmpdir(), '.epub-reader-cli', hash);
     }
     if (hash && suffix) {
-        return path.join(os.tmpdir(), '.ebook-reader-cli', hash, suffix);
+        return path.join(os.tmpdir(), '.epub-reader-cli', hash, suffix);
     }
-    return path.join(os.tmpdir(), '.ebook-reader-cli');
+    return path.join(os.tmpdir(), '.epub-reader-cli');
 };
 export const getHash = (filePath) => {
     return new Promise((resolve) => {

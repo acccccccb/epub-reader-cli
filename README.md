@@ -1,4 +1,4 @@
-# ebook-reader-cli
+# epub-reader-cli
 
 > 在命令行中读取 epub 文件
 
@@ -7,8 +7,8 @@
 ### 安装/调试
 
 ```bash
-npm i -g https://github.com/acccccccb/ebook-reader-cli.git
-cd ebook-reader-cli
+npm i -g https://github.com/acccccccb/epub-reader-cli.git
+cd epub-reader-cli
 npm link
 ```
 

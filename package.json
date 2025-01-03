@@ -1,7 +1,10 @@
 {
-    "name": "ebook-reader-cli",
+    "name": "epub-reader-cli",
     "version": "0.0.1",
     "description": "在命令行中读取epub文件",
+    "publishConfig": {
+        "access": "public"
+    },
     "main": "src/index.js",
     "bin": {
         "erc": "./src/index.js"
@@ -20,15 +23,15 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/acccccccb/ebook-reader-cli.git"
+        "url": "git+https://github.com/acccccccb/epub-reader-cli.git"
     },
     "type": "module",
     "author": "ihtmlcss.com",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/acccccccb/ebook-reader-cli/issues"
+        "url": "https://github.com/acccccccb/epub-reader-cli/issues"
     },
-    "homepage": "https://github.com/acccccccb/ebook-reader-cli",
+    "homepage": "https://github.com/acccccccb/epub-reader-cli",
     "dependencies": {
         "buffer": "^6.0.3",
         "childprocess": "^2.0.2",
