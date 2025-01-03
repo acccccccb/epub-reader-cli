@@ -6,22 +6,27 @@ const tempPath = getTempPath();
 
 export const writeRecord = (cfg) => {
     const { hash, chapterSrc, pageText } = cfg;
-    const newRecord = {
-        hash,
-        pageText: pageText
-            .replace(/\x1b\[[\d;]*m/g, '')
-            .replace(/[\x00-\x1F\x7F]/g, '')
-            .replace(/\s+/g, '')
-            .trim(),
-        lastPage: chapterSrc,
-        lastPageId: global.current_capter.id,
-        lastReadTime: new Date().getTime(),
-    };
-    global.newRecord = newRecord;
-    fs.writeFileSync(
-        path.join(tempPath, `${hash}.reading`),
-        JSON.stringify(newRecord, null, 4)
-    );
+    const current_capter = global.$store.get('current_capter');
+    if (!current_capter) {
+        console.log('current_capter', current_capter);
+    } else {
+        const newRecord = {
+            hash,
+            pageText: pageText
+                .replace(/\x1b\[[\d;]*m/g, '')
+                .replace(/[\x00-\x1F\x7F]/g, '')
+                .replace(/\s+/g, '')
+                .trim(),
+            lastPage: chapterSrc,
+            lastPageId: current_capter.id,
+            lastReadTime: new Date().getTime(),
+        };
+        global.$store.set('newRecord', newRecord);
+        fs.writeFileSync(
+            path.join(tempPath, `${hash}.reading`),
+            JSON.stringify(newRecord, null, 4)
+        );
+    }
 };
 export const readRecord = (hash) => {
     return new Promise((resolve, reject) => {

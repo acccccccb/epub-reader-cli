@@ -4,9 +4,12 @@ import { DOMParser } from 'xmldom';
 import inquirer from 'inquirer';
 import pager from './pager.js';
 import { clearRecord, readRecord } from './record.js';
-import { clearScreen, getTempPath } from './tools.js';
-
-const encode = 'utf-8';
+import {
+    clearScreen,
+    getTempPath,
+    getOpfPath,
+    parserContentOpf,
+} from './tools.js';
 
 const chapterReader = async (
     cfg = {
@@ -14,6 +17,8 @@ const chapterReader = async (
         jumpOver,
     }
 ) => {
+    const encode = global.$store.get('encode');
+
     const { jumpOver } = cfg;
     if (!cfg.hash) {
         console.error('hash can not empty');
@@ -21,20 +26,13 @@ const chapterReader = async (
     }
     const { hash } = cfg;
     const tempPath = getTempPath(cfg.hash);
-    const containerPath = `${tempPath}/META-INF/container.xml`;
-    // 读取container文件
-    const containerXml = fs.readFileSync(`${containerPath}`, encode);
-    const containerXmlNode = new DOMParser().parseFromString(
-        containerXml,
-        'text/xml'
-    );
     // 读取opf文件
-    const opfPath = containerXmlNode
-        .getElementsByTagName('rootfile')[0]
-        ?.getAttribute('full-path')
-        ?.replace('content.opf', '');
-    const tocNcx = fs.readFileSync(`${tempPath}/${opfPath}/toc.ncx`, encode);
+    const opfPath = getOpfPath(cfg.hash);
 
+    const ncxPath =
+        global.$store.get('manifest').find((item) => item.id === 'ncx')?.src ||
+        'toc.ncx';
+    const tocNcx = fs.readFileSync(`${tempPath}/${opfPath}/${ncxPath}`, encode);
     const nodeFilter = (nodeList, nodeType = 1) => {
         const list = [];
         for (let i = 0; i < nodeList.length; i++) {
@@ -49,21 +47,22 @@ const chapterReader = async (
     const navPointList = nodeFilter(
         tocNcxNode.getElementsByTagName('navMap')[0].childNodes
     );
-    const chapter = [];
+    let chapter = [];
 
     const parsingNavPoint = (navPoint, pid) => {
         const id = navPoint?.getAttribute('id');
+        const playOrder = Number(navPoint?.getAttribute('playOrder'));
         const stuck = nodeFilter(navPoint.childNodes);
         // do while
-        const obj = { id, pid };
+        const obj = { id, pid, value: id, playOrder };
         do {
             const node = stuck.shift();
             if (node.nodeType === 1) {
                 if (node.tagName === 'navLabel') {
                     const text = nodeFilter(node.childNodes, 1)[0].firstChild;
 
-                    obj.title = text?.data;
-                    if (!obj.title) {
+                    obj.name = text?.data;
+                    if (!obj.name) {
                         console.log(obj);
                         process.exit(0);
                     }
@@ -71,18 +70,24 @@ const chapterReader = async (
                 if (node.tagName === 'content') {
                     obj.src = node?.getAttribute('src');
                     if (!obj.src) {
-                        console.log(obj);
+                        console.log('parsingNavPoint', obj);
                         process.exit(0);
                     }
-                    if (pid === 0) {
+                    const finder = chapter.find(
+                        (findItem) => findItem.id === id
+                    );
+                    if (!finder) {
                         chapter.push(obj);
-                    } else {
-                        chapter.forEach((item) => {
-                            if (item.id === pid) {
-                                item.children = item.children || [];
-                                item.children.push(obj);
-                            }
-                        });
+                    }
+                    for (
+                        let j = 0;
+                        j < node.parentNode.childNodes.length;
+                        j++
+                    ) {
+                        const childItem = node.parentNode.childNodes[j];
+                        if (childItem.tagName === 'navPoint') {
+                            parsingNavPoint(childItem, id);
+                        }
                     }
                 }
 
@@ -97,55 +102,51 @@ const chapterReader = async (
         parsingNavPoint(navPointList[i], 0);
     }
 
-    const arr = [];
-    const loop = (list, level = 0) => {
-        list.forEach((item) => {
-            let tab = '';
-            for (let i = 0; i < level; i++) {
-                tab += '  ';
-            }
-            arr.push({
-                id: item.id,
-                name: tab + item.title,
-                value: item.id,
-                src: item.src,
-            });
-            if (item.children) {
-                loop(item.children, level + 1);
-            }
-        });
-    };
-    loop(chapter);
+    chapter.forEach((item) => {
+        if (item.pid === 0) {
+            item.level = 0;
+            item.name = `【${item.name}】`;
+        } else {
+            item.level =
+                chapter.find((item2) => item2.id === item.pid).level + 1;
+            item.name = `${' '.repeat(item.level)} ${item.name}`;
+        }
+    });
 
-    // fs.writeFileSync(`${tempPath}/chapter.json`, JSON.stringify(arr, null, 4));
+    // fs.writeFileSync(
+    //     `${tempPath}/chapter.json`,
+    //     JSON.stringify(chapter, null, 4)
+    // );
 
     const readContent = (chapter_id, jumpTo = undefined, jumpType = 1) => {
         if (!chapter_id) {
             console.log(`缺少chapter_id ${chapter_id}`);
             process.exit(0);
         }
-        const index = arr.findIndex((item) => item.id === chapter_id) || 0;
-        global.current_capter = {
+        const index = chapter.findIndex((item) => item.id === chapter_id) || 0;
+
+        global.$store.set('current_capter', {
             index,
-            total: arr.length,
-            ...arr.find((item) => item.id === chapter_id),
-        };
+            total: chapter.length,
+            ...chapter.find((item) => item.id === chapter_id),
+        });
         if (index >= 0) {
-            if (!arr[index]) {
+            if (!chapter[index]) {
                 console.log('章节不存在', chapter_id);
                 process.exit(0);
             }
-            const prev_chapter_id = arr[index - 1]?.id;
-            const current_chapter_id = arr[index]?.id;
-            const next_chapter_id = arr[index + 1]?.id;
+            const prev_chapter_id = chapter[index - 1]?.id;
+            const current_chapter_id = chapter[index]?.id;
+            const next_chapter_id = chapter[index + 1]?.id;
+
             contentReader({
                 hash: cfg.hash,
                 encode: encode,
-                chapter_src: arr[index].src,
+                chapter_src: chapter[index].src,
             }).then((content) => {
                 pager({
                     hash: cfg.hash,
-                    chapterSrc: arr[index].src,
+                    chapterSrc: chapter[index].src,
                     content,
                     prev: () => {
                         if (prev_chapter_id) {
@@ -156,13 +157,14 @@ const chapterReader = async (
                     },
                     next: () => {
                         if (next_chapter_id) {
-                            const next_chapter_src = arr[index + 1]?.src;
+                            const next_chapter_src = chapter[index + 1]?.src;
                             readContent(
                                 next_chapter_id,
                                 next_chapter_src.split('#')[1]
                             );
                         } else {
                             readContent(current_chapter_id, 'end');
+                            console.log('end');
                         }
                     },
                     jumpTo,
@@ -175,10 +177,12 @@ const chapterReader = async (
         }
     };
     const record = await readRecord(hash);
-    // 将arr写入文件
-    // fs.writeFileSync(`${tempPath}/chapter.json`, JSON.stringify(arr, null, 4));
+    // 将chapter写入文件
+    // fs.writeFileSync(`${tempPath}/chapter.json`, JSON.stringify(chapter, null, 4));
+    const { spine } = parserContentOpf(cfg.hash);
 
-    global.chapter = arr;
+    global.$store.set('chapter', chapter);
+
     const startNewReading = () => {
         inquirer
             .prompt([
@@ -186,21 +190,24 @@ const chapterReader = async (
                     name: 'chapter_id',
                     message: '选择章节'.blue,
                     type: 'list',
-                    choices: arr,
+                    choices: chapter,
                     loop: false,
                 },
             ])
             .then(({ chapter_id }) => {
-                const chapter_src = arr.find(
-                    (item) => item.id === chapter_id
-                )?.src;
+                const chapter_src = chapter.find(
+                    (item) =>
+                        item.id === chapter_id || item.value === chapter_id
+                )?.value;
                 readContent(chapter_id, chapter_src.split('#')[1], 1);
             })
             .catch((err) => {
                 clearScreen();
+                // console.log(err.toString());
                 process.exit(0);
             });
     };
+
     if (!record || jumpOver) {
         startNewReading();
     } else {
@@ -221,6 +228,8 @@ const chapterReader = async (
                 }
             })
             .catch((error) => {
+                clearScreen();
+                console.log(error.toString());
                 process.exit(0);
             });
     }

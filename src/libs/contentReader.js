@@ -1,15 +1,16 @@
 import fs from 'fs';
+import path from 'path';
 import { WritableStream } from 'htmlparser2/lib/WritableStream';
 import { DOMParser } from 'xmldom';
-import { cleanText, getTempPath } from './tools.js';
-
-const encode = 'utf-8';
+import { cleanText, getOpfPath, getTempPath } from './tools.js';
 const contentReader = async (
     cfg = {
         hash: '',
         chapter_src: '',
     }
 ) => {
+    const encode = global.$store.get('encode');
+
     if (!cfg.hash) {
         console.log('hash can not empty');
         process.exit(0);
@@ -17,20 +18,8 @@ const contentReader = async (
     process.stdout.write('加载中...');
     // 读取 HTML 文件
     const tempPath = getTempPath(cfg.hash);
-    const containerPath = `${tempPath}/META-INF/container.xml`;
-
-    // 读取container文件
-    const containerXml = fs.readFileSync(`${containerPath}`, encode);
-    const containerXmlNode = new DOMParser().parseFromString(
-        containerXml,
-        'text/xml'
-    );
     // 读取opf文件
-    const opfPath = containerXmlNode
-        .getElementsByTagName('rootfile')[0]
-        ?.getAttribute('full-path')
-        ?.replace('content.opf', '');
-
+    const opfPath = getOpfPath(cfg.hash);
     let isInBody = false;
     let textContent = '';
 
@@ -43,18 +32,32 @@ const contentReader = async (
     const chapter_id = cfg.chapter_src.split('#')[1];
 
     return new Promise((resolve) => {
+        const chapterPath = path.normalize(
+            `${tempPath}/${opfPath}/${chapter_src}`
+        );
+
+        // 判断chapter_src是否存在
+        if (!fs.existsSync(chapterPath)) {
+            resolve('内容为空');
+            return;
+        }
+
         const parser = new WritableStream({
             async onopentag(name, attributes) {
                 if (name === 'body') isInBody = true;
                 if (name === 'img' && isInBody) {
                     textContent += `\r\n图片(${attributes.src})`;
                 }
+                if (name === 'svg' && isInBody) {
+                    textContent += `\r\n[svg]`;
+                }
             },
             onattribute(name, value) {
                 if (name === 'id' && isInBody) {
                     // 判断id是否出现在目录中
+                    const chapter = global.$store.get('chapter');
 
-                    const finder = global.chapter.find((item) =>
+                    const finder = chapter.find((item) =>
                         item.src.includes(value)
                     );
                     if (finder) {
@@ -64,25 +67,37 @@ const contentReader = async (
             },
             ontext(text) {
                 if (isInBody) {
-                    textContent += text.replace(/\s+/g, '');
+                    textContent += text.trimEnd();
                 }
             },
             onclosetag(name) {
                 if (name === 'body') isInBody = false; // 退出 <body> 标签
-                if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'img'].includes(name))
+                if (
+                    [
+                        'p',
+                        'h1',
+                        'h2',
+                        'h3',
+                        'h4',
+                        'h5',
+                        'div',
+                        'img',
+                        'svg',
+                    ].includes(name)
+                )
                     textContent += '\r\n';
             },
         });
 
-        fs.createReadStream(`${tempPath}/${opfPath}/${chapter_src}`, {
+        fs.createReadStream(chapterPath, {
             encoding: encode,
         })
             .pipe(parser)
             .on('finish', () => {
-                fs.writeFileSync(
-                    `${tempPath}/reader.tmp`,
-                    textContent.trimStart()
-                );
+                // fs.writeFileSync(
+                //     `${tempPath}/reader.tmp`,
+                //     textContent.trimStart()
+                // );
                 // resolve(`${tempPath}/reader.tmp`);
                 if (!chapter_id) {
                     const regex = /\[#([\w_]+)\/#\]/; // 匹配 [#.../#] 模式，其中 ... 是动态内容

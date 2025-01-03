@@ -6,7 +6,6 @@ import { clearScreen, cleanText, colorText } from './tools.js';
 import chapterReader from './chapterReader.js';
 import readline from 'readline';
 import inquirer from 'inquirer';
-
 // content: string; // 定义为 string 类型
 // prev?: () => void; // 定义为函数类型，无参数，无返回值
 // next?: () => void; // 定义为函数类型，无参数，无返回值
@@ -180,7 +179,7 @@ const pager = (cfg) => {
                 reader(start);
             } else {
                 process.stdin.off('keypress', onKeyPress);
-                cfg.next?.();
+                cfg.next?.(start);
             }
         }
     };
@@ -191,9 +190,9 @@ const pager = (cfg) => {
         clearScreen();
         const page = Math.ceil(start / pageSize) + 1;
         const pageText = getPageText(start);
-        // const current_index = global.current_capter?.index;
-        const current_capter_name = global.current_capter?.name;
-        const total_capter = global.current_capter?.total;
+        const current_capter = global.$store.get('current_capter');
+        const current_capter_name = current_capter?.name;
+        const total_capter = current_capter?.total;
         const pageInfo = colorText(
             `${current_capter_name} (${page}/${total})`,
             '90'
