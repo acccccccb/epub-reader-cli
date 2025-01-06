@@ -7,7 +7,7 @@
 ### 安装
 
 ```bash
-npm i epub-reader-cli
+npm i -g epub-reader-cli
 ```
 
 ### 调试

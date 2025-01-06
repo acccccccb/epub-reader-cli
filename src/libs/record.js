@@ -4,19 +4,31 @@ import os from 'os';
 import { getTempPath } from './tools.js';
 const tempPath = getTempPath();
 
+function encode(text) {
+    return Buffer.from(text, 'utf8').toString('base64');
+}
+
+function decode(encodedText) {
+    return Buffer.from(encodedText, 'base64').toString('utf8');
+}
+
 export const writeRecord = (cfg) => {
     const { hash, chapterSrc, pageText } = cfg;
+    const { $store } = global;
     const current_capter = global.$store.get('current_capter');
+    const meta = $store.get('meta');
     if (!current_capter) {
         console.log('current_capter', current_capter);
     } else {
         const newRecord = {
+            meta,
             hash,
             pageText: pageText
                 .replace(/\x1b\[[\d;]*m/g, '')
                 .replace(/[\x00-\x1F\x7F]/g, '')
                 .replace(/\s+/g, '')
-                .trim(),
+                .trim()
+                .substring(0, 30),
             lastPage: chapterSrc,
             lastPageId: current_capter.id,
             lastReadTime: new Date().getTime(),
@@ -24,7 +36,7 @@ export const writeRecord = (cfg) => {
         global.$store.set('newRecord', newRecord);
         fs.writeFileSync(
             path.join(tempPath, `${hash}.reading`),
-            JSON.stringify(newRecord, null, 4)
+            encode(JSON.stringify(newRecord))
         );
     }
 };
@@ -39,7 +51,7 @@ export const readRecord = (hash) => {
                 const data = fs.readFileSync(filePath, 'utf8');
 
                 // 解析文件内容
-                const record = JSON.parse(data);
+                const record = JSON.parse(decode(data));
 
                 // 返回解析后的数据
                 return resolve(record);
