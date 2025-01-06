@@ -44,6 +44,7 @@ export const colorText = (text, colorCode) => {
 export const getOpfPath = (hash) => {
     const tempPath = getTempPath(hash);
     const containerPath = `${tempPath}/META-INF/container.xml`;
+
     // 读取container文件
     const containerXml = fs.readFileSync(`${containerPath}`, 'utf-8');
     const containerXmlNode = new DOMParser().parseFromString(

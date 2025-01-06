@@ -75,15 +75,26 @@ const getBookListInfoByHash = async (list) => {
         );
     };
     return new Promise((resolve) => {
-        const promises = list.map(async (item) => {
-            const meta = await metaReader({
-                hash: item,
+        const promises = list
+            .filter((item) => {
+                const tempPath = getTempPath(item);
+                const fileExist = fs.existsSync(
+                    `${tempPath}/META-INF/container.xml`
+                );
+                if (!fileExist) {
+                    clearCacheByHash(item, true);
+                }
+                return fileExist;
+            })
+            .map(async (item) => {
+                const meta = await metaReader({
+                    hash: item,
+                });
+                return {
+                    name: getBookName(meta),
+                    value: item,
+                };
             });
-            return {
-                name: getBookName(meta),
-                value: item,
-            };
-        });
         Promise.all(promises).then(resolve); // 等待所有异步操作完成后再 resolve
     });
 };
