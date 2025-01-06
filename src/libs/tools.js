@@ -61,7 +61,6 @@ export const getOpfPath = (hash) => {
 
 export const parserContentOpf = (hash) => {
     const tempPath = getTempPath(hash);
-    const containerPath = `${tempPath}/META-INF/container.xml`;
     const meta = {};
     const opfPath = getOpfPath(hash);
     global.$store.set('opfPath', opfPath);
