@@ -1,6 +1,6 @@
 {
     "name": "epub-reader-cli",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "在命令行中读取epub文件",
     "publishConfig": {
         "access": "public"
