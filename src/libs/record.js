@@ -94,13 +94,13 @@ export const clearRecord = (hash) => {
     });
 };
 
-export const clearCacheByHash = (hash) => {
+export const clearCacheByHash = (hash, keepReading = false) => {
     return new Promise((resolve) => {
         if (hash) {
             const filePath = path.join(tempPath, `${hash}.reading`);
             const bookPath = path.join(tempPath, `${hash}`);
             // 删除文件
-            if (fs.existsSync(filePath)) {
+            if (fs.existsSync(filePath) && !keepReading) {
                 fs.rmSync(filePath, { recursive: true, force: true });
             }
             if (fs.existsSync(bookPath)) {
