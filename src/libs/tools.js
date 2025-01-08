@@ -241,3 +241,86 @@ export const getCacheBookList = () => {
         return stats.isDirectory();
     });
 };
+
+export const printSomething = () => {
+    const fileList = [
+        {
+            mode: 'd-----',
+            lastWriteTime: '2025/1/7 10:34',
+            length: '',
+            name: '.idea',
+        },
+        {
+            mode: 'd-----',
+            lastWriteTime: '2024/12/31 15:21',
+            length: '',
+            name: 'node_modules',
+        },
+        {
+            mode: 'd-----',
+            lastWriteTime: '2025/1/6 16:19',
+            length: '',
+            name: 'src',
+        },
+        {
+            mode: '-a----',
+            lastWriteTime: '2024/12/20 11:46',
+            length: 57,
+            name: '.eslintignore',
+        },
+        {
+            mode: '-a----',
+            lastWriteTime: '2024/12/20 11:46',
+            length: 12855,
+            name: '.eslintrc.js',
+        },
+        {
+            mode: '-a----',
+            lastWriteTime: '2024/12/20 11:46',
+            length: 306,
+            name: '.gitignore',
+        },
+        {
+            mode: '-a----',
+            lastWriteTime: '2024/12/20 11:46',
+            length: 508,
+            name: '.prettierrc',
+        },
+        {
+            mode: '-a----',
+            lastWriteTime: '2025/1/6 16:19',
+            length: 41273,
+            name: 'package-lock.json',
+        },
+        {
+            mode: '-a----',
+            lastWriteTime: '2025/1/6 16:19',
+            length: 1378,
+            name: 'package.json',
+        },
+        {
+            mode: '-a----',
+            lastWriteTime: '2025/1/6 11:10',
+            length: 1073,
+            name: 'README.md',
+        },
+        {
+            mode: '-a----',
+            lastWriteTime: '2025/1/3 14:30',
+            length: 69,
+            name: 'wfconfig.json',
+        },
+    ];
+
+    console.log('Mode                 LastWriteTime         Length Name');
+    console.log('----                 -------------         ------ ----');
+
+    fileList.forEach((file) => {
+        const { mode, lastWriteTime, length, name } = file;
+        console.log(
+            `${mode.padEnd(20)}${lastWriteTime.padEnd(22)}${String(
+                length
+            ).padEnd(8)}${name}`
+        );
+    });
+};

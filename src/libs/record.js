@@ -28,7 +28,7 @@ export const writeRecord = (cfg) => {
                 .replace(/[\x00-\x1F\x7F]/g, '')
                 .replace(/\s+/g, '')
                 .trim()
-                .substring(0, 30),
+                .substring(0, 50),
             lastPage: chapterSrc,
             lastPageId: current_capter.id,
             lastReadTime: new Date().getTime(),

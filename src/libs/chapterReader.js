@@ -223,13 +223,11 @@ const chapterReader = async (
                 if (confirm) {
                     readContent(record.lastPageId, record.pageText, 2);
                 } else {
-                    await clearRecord(hash);
                     startNewReading();
                 }
             })
             .catch((error) => {
                 clearScreen();
-                console.log(error.toString());
                 process.exit(0);
             });
     }
