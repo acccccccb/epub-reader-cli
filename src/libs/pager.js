@@ -2,7 +2,7 @@ import stringWidth from 'string-width';
 import terminalSize from 'terminal-size';
 import { closest } from 'fastest-levenshtein';
 import { writeRecord, clearCacheByHash } from './record.js';
-import { clearScreen, cleanText, colorText } from './tools.js';
+import { clearScreen, cleanText, colorText, printSomething } from './tools.js';
 import chapterReader from './chapterReader.js';
 import readline from 'readline';
 import inquirer from 'inquirer';
@@ -181,6 +181,11 @@ const pager = (cfg) => {
                 process.stdin.off('keypress', onKeyPress);
                 cfg.next?.(start);
             }
+        }
+        // 清除屏幕
+        if (key.name === 'space') {
+            clearScreen();
+            printSomething();
         }
     };
     process.stdin.on('keypress', onKeyPress);
